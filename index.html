@@ -20,6 +20,45 @@
       text-align: center;
     }
 
+    .section {
+      margin-bottom: 30px;
+    }
+
+    .form-group {
+      margin-bottom: 10px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+
+    input, button, select {
+      width: 100%;
+      box-sizing: border-box;
+      font-size: 18px;
+      padding: 12px;
+      margin-bottom: 10px;
+      border: none;
+      border-radius: 5px;
+    }
+
+    button {
+      background-color: crimson;
+      color: white;
+      cursor: pointer;
+    }
+
+    .inline-controls {
+      display: flex;
+      gap: 10px;
+    }
+
+    .inline-controls > * {
+      flex: 1;
+    }
+
     .exercise {
       margin-bottom: 20px;
       padding: 15px;
@@ -57,24 +96,6 @@
       background-color: #777;
     }
 
-    input, button, select {
-      font-size: 18px;
-      padding: 12px;
-      margin: 10px 5px;
-      border: none;
-      border-radius: 5px;
-    }
-
-    button {
-      background-color: crimson;
-      color: white;
-      cursor: pointer;
-    }
-
-    #controls {
-      margin-bottom: 20px;
-    }
-
     .delete-btn {
       position: absolute;
       top: 10px;
@@ -104,24 +125,34 @@
 </head>
 <body>
 
-
 <h1>Workout Log</h1>
 
-<div id="controls">
+<div class="section">
+  <h2>📁 Manage Routines</h2>
   <label for="passSelect">Select routine:</label>
-  <select id="passSelect"></select>
-  <button id="deletePassBtn" title="Delete current routine" style="background-color:#550000; color:white; border:none; padding:8px; border-radius:5px; cursor:pointer;">🗑</button>
+  <div class="inline-controls">
+    <select id="passSelect"></select>
+    <button id="deletePassBtn" title="Delete current routine">🗑</button>
+  </div>
   <input type="text" id="newPassName" placeholder="New routine name" />
   <button onclick="createNewPass()">+ Add routine</button>
 </div>
 
-<form id="addForm">
-  <input type="text" id="exerciseName" placeholder="Exercise name" required />
-  <input type="number" id="startWeight" placeholder="Starting weight (kg)" required step="0.5" />
-  <input type="number" id="setCount" placeholder="Sets" required min="1" max="10" />
-  <input type="number" id="targetReps" placeholder="Target reps per set" required min="1" max="20" />
-  <button type="submit">Add exercise</button>
-</form>
+<div class="section">
+  <h2>📌 Add Exercise</h2>
+  <form id="addForm">
+    <div class="form-group">
+      <label for="exerciseName">Exercise name</label>
+      <input type="text" id="exerciseName" placeholder="Exercise name" required />
+    </div>
+    <div class="inline-controls">
+      <input type="number" id="startWeight" placeholder="Weight (kg)" required step="0.5" />
+      <input type="number" id="setCount" placeholder="Sets" required min="1" max="10" />
+      <input type="number" id="targetReps" placeholder="Reps" required min="1" max="20" />
+    </div>
+    <button type="submit">Add exercise</button>
+  </form>
+</div>
 
 <div id="exercisesContainer"></div>
 
