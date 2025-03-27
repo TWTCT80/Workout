@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Workout Log Custom Sets & Reps</title>
+  <style>
+    body {
+      background-color: #111;
+      color: white;
+      font-family: sans-serif;
+      padding: 20px;
+    }
+
+    h1, h2 {
+      text-align: center;
+    }
+
+    .exercise {
+      margin-bottom: 20px;
+      padding: 15px;
+      border: 1px solid #444;
+      border-radius: 8px;
+      background-color: #1a1a1a;
+      position: relative;
+    }
+
+    .sets {
+      margin-top: 10px;
+    }
+
+    .set {
+      display: inline-block;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background-color: #444;
+      color: white;
+      text-align: center;
+      line-height: 40px;
+      margin-right: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+      font-weight: bold;
+    }
+
+    .set.full {
+      background-color: green;
+    }
+
+    .set.partial {
+      background-color: #777;
+    }
+
+    input, button, select {
+      padding: 10px;
+      margin-right: 10px;
+      border: none;
+      border-radius: 5px;
+    }
+
+    button {
+      background-color: crimson;
+      color: white;
+      cursor: pointer;
+    }
+
+    #controls {
+      margin-bottom: 20px;
+    }
+
+    .delete-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background-color: #550000;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      padding: 4px 8px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    #logContainer {
+      margin-top: 40px;
+      border-top: 1px solid #444;
+      padding-top: 20px;
+    }
+
+    .log-entry {
+      margin-bottom: 15px;
+      padding: 10px;
+      background-color: #222;
+      border-radius: 5px;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Workout Log</h1>
+
+<div id="controls">
+  <label for="passSelect">Select routine:</label>
+  <select id="passSelect"></select>
+  <button id="deletePassBtn" title="Delete current routine" style="background-color:#550000; color:white; border:none; padding:8px; border-radius:5px; cursor:pointer;">🗑</button>
+  <input type="text" id="newPassName" placeholder="New routine name" />
+  <button onclick="createNewPass()">+ Add routine</button>
+</div>
+
+<form id="addForm">
+  <input type="text" id="exerciseName" placeholder="Exercise name" required />
+  <input type="number" id="startWeight" placeholder="Starting weight (kg)" required step="0.5" />
+  <input type="number" id="setCount" placeholder="Sets" required min="1" max="10" />
+  <input type="number" id="targetReps" placeholder="Target reps per set" required min="1" max="20" />
+  <button type="submit">Add exercise</button>
+</form>
+
+<div id="exercisesContainer"></div>
+
+<div style="text-align: center; margin: 20px 0;">
+  <button id="finishBtn">✅ Done for today</button>
+</div>
+
+<div id="logContainer">
+  <h2>📖 Training Log</h2>
+  <div id="logList"></div>
+</div>
+
+<script>
+const STORAGE_KEY = "workout_log_data_custom";
+const LOG_KEY = "workout_log_history_custom";
+const LAST_PASS_KEY = "workout_log_last_pass_custom";
+
+const container = document.getElementById("exercisesContainer");
+const passSelect = document.getElementById("passSelect");
+const form = document.getElementById("addForm");
+const finishBtn = document.getElementById("finishBtn");
+const logList = document.getElementById("logList");
+
+let data = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {
+  "Routine A": [],
+  "Routine B": []
+};
+let logg = JSON.parse(localStorage.getItem(LOG_KEY)) || [];
+
+function saveData() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  localStorage.setItem(LOG_KEY, JSON.stringify(logg));
+}
+
+function populatePassDropdown() {
+  passSelect.innerHTML = "";
+  for (let pass in data) {
+    const opt = document.createElement("option");
+    opt.value = pass;
+    opt.textContent = pass;
+    passSelect.appendChild(opt);
+  }
+  const lastPass = localStorage.getItem(LAST_PASS_KEY);
+  if (lastPass) {
+    const passList = Object.keys(data);
+    const index = passList.indexOf(lastPass);
+    const nextIndex = (index + 1) % passList.length;
+    passSelect.value = passList[nextIndex];
+  }
+}
+
+function render() {
+  const currentPass = passSelect.value;
+  container.innerHTML = "";
+  data[currentPass].forEach((ex, index) => {
+    const div = document.createElement("div");
+    div.className = "exercise";
+
+    const title = document.createElement("h3");
+    title.textContent = `${ex.name} – ${ex.sets.length}×${ex.targetReps} ${ex.weight.toFixed(1)} kg`;
+    div.appendChild(title);
+
+    const deleteBtn = document.createElement("button");
+    deleteBtn.className = "delete-btn";
+    deleteBtn.textContent = "🗑 Remove";
+    deleteBtn.addEventListener("click", () => {
+      if (confirm(`Remove exercise \"${ex.name}\"?`)) {
+        data[currentPass].splice(index, 1);
+        saveData();
+        render();
+      }
+    });
+    div.appendChild(deleteBtn);
+
+    const setsDiv = document.createElement("div");
+    setsDiv.className = "sets";
+
+    ex.sets.forEach((val, i) => {
+      const circle = document.createElement("div");
+      circle.className = "set";
+      circle.textContent = val;
+
+      if (val === ex.targetReps) {
+        circle.classList.add("full");
+      } else if (val > 0) {
+        circle.classList.add("partial");
+      }
+
+      circle.addEventListener("click", () => {
+        ex.sets[i] = (ex.sets[i] + 1) % (ex.targetReps + 1);
+        saveData();
+        render();
+      });
+
+      setsDiv.appendChild(circle);
+    });
+
+    div.appendChild(setsDiv);
+    container.appendChild(div);
+  });
+}
+
+function createNewPass() {
+  const name = document.getElementById("newPassName").value.trim();
+  if (name && !data[name]) {
+    data[name] = [];
+    saveData();
+    populatePassDropdown();
+    passSelect.value = name;
+    render();
+    document.getElementById("newPassName").value = "";
+  }
+}
+
+document.getElementById("deletePassBtn").addEventListener("click", () => {
+  const currentPass = passSelect.value;
+  const passNames = Object.keys(data);
+
+  if (passNames.length <= 1) {
+    alert("At least one routine must remain.");
+    return;
+  }
+
+  if (confirm(`Do you really want to delete routine \"${currentPass}\"? This will remove all exercises and log entries.`)) {
+    delete data[currentPass];
+    logg = logg.filter(entry => entry.pass !== currentPass);
+    const remaining = Object.keys(data);
+    passSelect.value = remaining[0];
+    localStorage.setItem(LAST_PASS_KEY, remaining[0]);
+    saveData();
+    populatePassDropdown();
+    render();
+    renderLogg();
+  }
+});
+
+form.addEventListener("submit", (e) => {
+  e.preventDefault();
+  const currentPass = passSelect.value;
+  const name = document.getElementById("exerciseName").value.trim();
+  const weight = parseFloat(document.getElementById("startWeight").value);
+  const sets = parseInt(document.getElementById("setCount").value);
+  const reps = parseInt(document.getElementById("targetReps").value);
+  if (name && !isNaN(weight) && sets > 0 && reps > 0) {
+    data[currentPass].push({ name, weight, targetReps: reps, sets: Array(sets).fill(0) });
+    saveData();
+    render();
+    form.reset();
+  }
+});
+
+finishBtn.addEventListener("click", () => {
+  const currentPass = passSelect.value;
+  const today = new Date().toLocaleDateString("en-GB");
+  const result = data[currentPass].map(ex => {
+    const success = ex.sets.every(r => r === ex.targetReps);
+    const reps = [...ex.sets];
+    const log = { name: ex.name, weight: ex.weight, reps };
+    if (success) {
+      ex.weight += 2.5;
+    }
+    ex.sets = Array(ex.sets.length).fill(0);
+    return log;
+  });
+  logg.unshift({ date: today, pass: currentPass, exercises: result });
+  localStorage.setItem(LAST_PASS_KEY, currentPass);
+  saveData();
+  render();
+  renderLogg();
+  alert(`Routine \"${currentPass}\" has been completed and logged.`);
+});
+
+function renderLogg() {
+  logList.innerHTML = "";
+  logg.forEach(entry => {
+    const div = document.createElement("div");
+    div.className = "log-entry";
+    const header = document.createElement("strong");
+    header.textContent = `${entry.date} – ${entry.pass}`;
+    div.appendChild(header);
+    entry.exercises.forEach(ex => {
+      const p = document.createElement("p");
+      p.textContent = `${ex.name}: ${ex.weight.toFixed(1)} kg [${ex.reps.join(", ")}]`;
+      div.appendChild(p);
+    });
+    logList.appendChild(div);
+  });
+}
+
+passSelect.addEventListener("change", render);
+
+populatePassDropdown();
+render();
+renderLogg();
+</script>
+
+</body>
+</html>
