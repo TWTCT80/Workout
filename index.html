@@ -136,6 +136,9 @@
       font-weight: bold;
       user-select: none;
       transition: background-color 0.2s;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-touch-callout: none;
+      touch-action: manipulation;
     }
     
     .set.partial { background-color: #777; }
@@ -231,6 +234,12 @@
       
       .container {
         padding: 15px;
+      }
+      
+      .set {
+        width: 50px;
+        height: 50px;
+        line-height: 50px;
       }
     }
   </style>
@@ -446,25 +455,40 @@ class WorkoutTracker {
           setElement.classList.add("partial");
         }
         
-        // Click to increment reps
+        // Click/Tap to increment reps
         setElement.addEventListener('click', () => {
           exercise.sets[index] = (exercise.sets[index] + 1) % (exercise.targetReps + 1);
           this.saveData();
           this.renderWorkout();
         });
         
-        // Long press to complete set
+        // Long press handling for both mouse and touch
         let pressTimer;
-        setElement.addEventListener('mousedown', () => {
+        
+        const startPress = () => {
           pressTimer = setTimeout(() => {
             exercise.sets[index] = exercise.targetReps;
             this.saveData();
             this.renderWorkout();
-          }, 800);
-        });
+          }, 800); // 800ms delay for long press
+        };
         
-        setElement.addEventListener('mouseup', () => clearTimeout(pressTimer));
-        setElement.addEventListener('mouseleave', () => clearTimeout(pressTimer));
+        const cancelPress = () => {
+          clearTimeout(pressTimer);
+        };
+        
+        // Mouse events
+        setElement.addEventListener('mousedown', startPress);
+        setElement.addEventListener('mouseup', cancelPress);
+        setElement.addEventListener('mouseleave', cancelPress);
+        
+        // Touch events
+        setElement.addEventListener('touchstart', startPress);
+        setElement.addEventListener('touchend', cancelPress);
+        setElement.addEventListener('touchcancel', cancelPress);
+        
+        // Prevent context menu on long press
+        setElement.addEventListener('contextmenu', (e) => e.preventDefault());
         
         setsDiv.appendChild(setElement);
       });
@@ -787,13 +811,6 @@ class WorkoutTracker {
 document.addEventListener('DOMContentLoaded', () => {
   new WorkoutTracker();
 });
-
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js');
-  });
-}
-
 </script>
 </body>
 </html>
